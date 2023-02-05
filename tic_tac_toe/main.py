@@ -8,6 +8,7 @@ def main():
     screen = pygame.display.set_mode((600, 600))
     pygame.display.set_caption("Tic Tac Toe")
     game = TicTacToe(screen)
+    playBot = True
     running = True
     while running:
         for event in pygame.event.get():
@@ -17,11 +18,12 @@ def main():
                 if not game.game_over:
                     pos = np.array(pygame.mouse.get_pos()) // game.grid_size
                     game.click(pos)
+                    pygame.display.update()
 
-                if game.game_over:
-                    game.draw_winner()
-                    pygame.time.delay(1000)
-                    game.reset()
+                if playBot and game.player == -1:
+                    _, botPlay = game.minimax()
+                    game.click(np.array([botPlay % 3, botPlay//3]))
+                    pygame.display.update()
 
         pygame.display.update()
 

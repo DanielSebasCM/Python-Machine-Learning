@@ -15,7 +15,7 @@ FONT = pygame.font.SysFont("monospace", 100)
 
 
 class TicTacToe:
-    board = np.zeros((3, 3))
+    board: ndarray = np.zeros((3, 3))
     player = 1
     game_over = False
     winner = None
@@ -29,6 +29,14 @@ class TicTacToe:
         [[0, 0], [1, 1], [2, 2]],
         [[2, 0], [1, 1], [0, 2]]
     ])
+
+    winBoards = np.zeros((len(winStates), 3, 3))
+
+    for i, state in enumerate(winStates):
+        for j, k in state:
+            winBoards[i, j, k] = 1
+
+    print(winBoards)
 
     def __init__(self, screen: Surface):
         self.screen = screen
@@ -57,18 +65,22 @@ class TicTacToe:
             pygame.draw.line(self.screen, P2_CLR, pos + [margin, self.grid_size - margin], pos + [
                              self.grid_size - margin, margin], self.grid_size//20)
 
-    def check_win(self):
-        for state in self.winStates:
-            if self.board[state[0][0], state[0][1]] == self.board[state[1][0], state[1][1]] == self.board[state[2][0], state[2][1]] != 0:
-                self.game_over = True
-                self.winner = self.board[state[0][0], state[0][1]]
+    def check_win(self) -> bool:
+        for first, second, third in self.winStates:
+            if self.board[first[0], first[1]] == \
+                    self.board[second[0], second[1]] == \
+                    self.board[third[0], third[1]] != 0:
                 return True
+
         return False
 
-    def check_draw(self):
+        # for board in self.winBoards:
+        #     if abs((board * self.board).sum()) == 3:
+        #         return True
+        # return False
+
+    def check_draw(self) -> bool:
         if 0 not in self.board:
-            self.game_over = True
-            self.winner = 0
             return True
         return False
 
@@ -93,11 +105,61 @@ class TicTacToe:
     def click(self, pos):
         if self.game_over:
             return
-        x = pos[0]
-        y = pos[1]
-        if self.board[x, y] == 0:
-            self.board[x, y] = self.player
+
+        if self.board[pos[0], pos[1]] == 0:
+
+            self.board[pos[0], pos[1]] = self.player
             self.draw_figure(pos, self.player)
+
+            if self.check_win():
+                self.game_over = True
+                self.winner = self.player
+
+            if self.check_draw():
+                self.winner = 0
+                self.game_over = True
+
             self.player *= -1
-            self.check_win()
-            self.check_draw()
+
+            if self.game_over:
+                self.draw_winner()
+                pygame.time.delay(1000)
+                self.reset()
+
+    def minimax(self, maximizing=True, depth=10) -> tuple[int, int]:
+
+        if depth == 0:
+            return 0
+
+        empty_spaces = []
+
+        for i, row in enumerate(self.board):
+            for j, column in enumerate(row):
+                if column == 0:
+                    empty_spaces.append([i, j])
+
+        buffer = -np.inf if maximizing else np.inf
+        return_i = -1
+
+        for i, j in empty_spaces:
+            self.board[i, j] = self.player
+
+            if self.check_draw():
+                score = 0
+
+            elif self.check_win():
+                score = 100 if maximizing else -100
+
+            else:
+                self.player *= -1
+                score, _ = self.minimax(not maximizing, depth-1)
+                score /= depth
+                self.player *= -1
+
+            if score > buffer if maximizing else score < buffer:
+                buffer = score
+                return_i = i + j * 3
+
+            self.board[i, j] = 0
+
+        return (buffer, return_i)

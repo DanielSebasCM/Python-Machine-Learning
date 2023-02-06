@@ -167,4 +167,23 @@ class Game:
         return self.snake.look()
 
 
-Game().run()
+game = Game()
+
+running = True
+
+while running:
+    # for loop through the event queue
+    for event in pygame.event.get():
+
+        # Check for QUIT event
+        if event.type == pygame.QUIT:
+            running = False
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                game.step()
+            else:
+                game.handleInput(event)
+
+    game.renderFrame()
+    pygame.time.Clock().tick(game.FPS)

@@ -8,7 +8,8 @@ class Snake:
 
     directions: np.ndarray = np.array(
         [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)])
-    direction = directions[0]
+    direction = np.array([1, 0])
+    isAlive = True
 
     def __init__(self, grid: tuple[int, int], size: int = 3, speed: float = 3) -> None:
         self.size: int = size
@@ -20,7 +21,6 @@ class Snake:
         pass
 
     def move(self, direction: np.ndarray) -> None:
-
         # Move the head
         self.head = self.head + direction
 
@@ -35,11 +35,11 @@ class Snake:
 
         # Check if the snake went out of bounds
         if not (0 <= self.head[0] < self.grid[0] and 0 <= self.head[1] < self.grid[1]):
-            raise Exception("Snake went out of bounds")
+            self.isAlive = False
 
         # Check if the snake ate itself
         if (self.contains(self.head)):
-            raise Exception("Snake ate itself")
+            self.isAlive = False
 
         # Move the body
         self.body.insert(0, self.head)

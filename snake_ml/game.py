@@ -1,5 +1,6 @@
 import pygame
 import time
+import numpy as np
 from Snake import Snake
 
 
@@ -31,17 +32,18 @@ class Game:
 
     def __init__(self) -> None:
         self.snake = Snake((self.GRID_WIDTH, self.GRID_HEIGHT))
-        self.vision = self.snake.look()
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
+        # self.vision = self.snake.look()
+        score = 0
         pygame.display.set_caption("SNAKEE")
 
-    def drawBackground(self):
+    def drawBackground(self) -> None:
         self.screen.fill(self.text_bg_color)
         rect = (self.LEFT_MARGIN, self.TOP_MARGIN, self.WIDTH - 2 *
                 self.LEFT_MARGIN, self.HEIGHT - 2*self.TOP_MARGIN)
         pygame.draw.rect(self.screen, self.background_color, rect)
 
-    def drawSnake(self):
+    def drawSnake(self) -> None:
         for segment in self.snake.body:
             x, y = self.gridToPixel(segment)
             x += self.BODY_GAP/2
@@ -53,7 +55,7 @@ class Game:
 
             pygame.draw.rect(self.screen, self.snake_color, rect)
 
-    def drawFood(self):
+    def drawFood(self) -> None:
         x, y = self.gridToPixel(self.snake.food.pos)
         x += self.BODY_GAP/2
         y += self.BODY_GAP/2
@@ -64,51 +66,51 @@ class Game:
 
         pygame.draw.rect(self.screen, self.food_color, rect)
 
-    def drawScore(self):
+    def drawScore(self) -> None:
         font = pygame.font.SysFont("monospace", 72)
         label = font.render(str(self.snake.size), 1, self.text_color)
         self.screen.blit(label, (self.WIDTH/2 - label.get_width()/2,
                                  self.HEIGHT/2 - label.get_height()/2))
 
-    def drawVision(self):
-        for i, distance in enumerate(self.vision):
-            direction = self.snake.directions[i//3]
-            if distance == 0:
-                continue
+    # def drawVision(self) -> None:
+    #     for i, distance in enumerate(self.vision):
+    #         direction = self.snake.directions[i//3]
+    #         if distance == 0:
+    #             continue
 
-            pos_x = self.snake.body[0][0] + direction[0] * distance
-            pos_y = self.snake.body[0][1] + direction[1] * distance
+    #         pos_x = self.snake.body[0][0] + direction[0] * distance
+    #         pos_y = self.snake.body[0][1] + direction[1] * distance
 
-            offset = [direction[0] * self.SEG_SIZE /
-                      2, direction[1] * self.SEG_SIZE/2]
+    #         offset = [direction[0] * self.SEG_SIZE /
+    #                   2, direction[1] * self.SEG_SIZE/2]
 
-            x, y = self.gridToPixel((pos_x, pos_y))
-            x += self.SEG_SIZE/2 - offset[0]
-            y += self.SEG_SIZE/2 - offset[1]
+    #         x, y = self.gridToPixel((pos_x, pos_y))
+    #         x += self.SEG_SIZE/2 - offset[0]
+    #         y += self.SEG_SIZE/2 - offset[1]
 
-            x2, y2 = self.gridToPixel(self.snake.head)
-            x2 += self.SEG_SIZE/2 + offset[0]
-            y2 += self.SEG_SIZE/2 + offset[1]
+    #         x2, y2 = self.gridToPixel(self.snake.head)
+    #         x2 += self.SEG_SIZE/2 + offset[0]
+    #         y2 += self.SEG_SIZE/2 + offset[1]
 
-            pygame.draw.circle(self.screen, (255, 0, 0), (x, y), 5)
-            pygame.draw.line(self.screen, (255, 0, 0), (x, y), (x2, y2), 1)
+    #         pygame.draw.circle(self.screen, (255, 0, 0), (x, y), 5)
+    #         pygame.draw.line(self.screen, (255, 0, 0), (x, y), (x2, y2), 1)
 
-    def gridToPixel(self, grid_pos):
+    def gridToPixel(self, grid_pos) -> tuple[int, int]:
         x = grid_pos[0] * self.SEG_SIZE + self.LEFT_MARGIN
         y = grid_pos[1] * self.SEG_SIZE + self.TOP_MARGIN
         return (x, y)
 
-    def renderFrame(self):
+    def renderFrame(self) -> None:
         self.drawBackground()
         self.drawSnake()
         self.drawFood()
-        self.drawVision()
+        # self.drawVision()
         pygame.display.update()
 
-    def restart(self):
+    def restart(self) -> None:
         self.snake = Snake((self.GRID_WIDTH, self.GRID_HEIGHT))
 
-    def gameOver(self):
+    def gameOver(self) -> None:
         font = pygame.font.SysFont("monospace", 72)
         self.screen.fill(self.text_bg_color)
         label = font.render("GAME OVER", 1, self.text_color)
@@ -118,10 +120,8 @@ class Game:
         time.sleep(3)
         self.restart()
 
-    def run(self):
+    def run(self) -> None:
         running = True
-
-        score = 0
 
         start_time = time.time()
         prev_time = start_time
@@ -135,30 +135,36 @@ class Game:
                     running = False
 
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        self.snake.direction = [0, -1]
-                    elif event.key == pygame.K_DOWN:
-                        self.snake.direction = [0, 1]
-                    elif event.key == pygame.K_LEFT:
-                        self.snake.direction = [-1, 0]
-                    elif event.key == pygame.K_RIGHT:
-                        self.snake.direction = [1, 0]
+                    self.handleInput(event)
 
             current_time = time.time()
 
             if current_time - prev_time > 1/self.SPEED:
                 prev_time = current_time
-                try:
-                    self.snake.move(self.snake.direction)
-                    self.vision = self.snake.look()
-                except Exception as e:
-                    print(e)
-                    self.gameOver()
+                self.step()
 
-                score = len(self.snake.body) * 100
+                self.score = len(self.snake.body) * 100
 
             self.renderFrame()
             pygame.time.Clock().tick(self.FPS)
+
+    def handleInput(self, event) -> None:
+        if event.key == pygame.K_UP:
+            self.snake.direction = np.array([0, -1])
+        elif event.key == pygame.K_RIGHT:
+            self.snake.direction = np.array([1, 0])
+        elif event.key == pygame.K_DOWN:
+            self.snake.direction = np.array([0, 1])
+        elif event.key == pygame.K_LEFT:
+            self.snake.direction = np.array([-1, 0])
+
+    def step(self) -> np.ndarray:
+        self.snake.move(self.snake.direction)
+
+        if not self.snake.isAlive:
+            self.gameOver()
+
+        return self.snake.look()
 
 
 Game().run()

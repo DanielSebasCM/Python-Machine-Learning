@@ -30,6 +30,10 @@ class Game:
     text_bg_color = 0x372a39
     background_color = 0xf5e9bf
 
+    fpsController = pygame.time.Clock()
+
+    getEvents = pygame.event.get
+
     def __init__(self) -> None:
         self.snake = Snake((self.GRID_WIDTH, self.GRID_HEIGHT))
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
@@ -127,10 +131,8 @@ class Game:
         prev_time = start_time
 
         while running:
-            # for loop through the event queue
             for event in pygame.event.get():
 
-                # Check for QUIT event
                 if event.type == pygame.QUIT:
                     running = False
 
@@ -165,25 +167,3 @@ class Game:
             self.gameOver()
 
         return self.snake.look()
-
-
-game = Game()
-
-running = True
-
-while running:
-    # for loop through the event queue
-    for event in pygame.event.get():
-
-        # Check for QUIT event
-        if event.type == pygame.QUIT:
-            running = False
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                game.step()
-            else:
-                game.handleInput(event)
-
-    game.renderFrame()
-    pygame.time.Clock().tick(game.FPS)

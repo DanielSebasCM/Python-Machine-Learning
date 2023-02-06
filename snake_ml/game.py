@@ -149,7 +149,7 @@ class Game:
             if current_time - prev_time > 1/self.SPEED:
                 prev_time = current_time
                 try:
-                    self.snake.move()
+                    self.snake.move(self.snake.direction)
                     self.vision = self.snake.look()
                 except Exception as e:
                     print(e)
@@ -159,3 +159,6 @@ class Game:
 
             self.renderFrame()
             pygame.time.Clock().tick(self.FPS)
+
+
+Game().run()

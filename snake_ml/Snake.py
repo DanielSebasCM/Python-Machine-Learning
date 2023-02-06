@@ -30,7 +30,7 @@ class Snake:
             self.food = self.getRandFood()
 
         # Check if the snake is too long
-        if (len(self.body) > self.size):
+        if (len(self.body) > self.size - 1):
             self.body.pop()
 
         # Check if the snake went out of bounds

@@ -1,28 +1,54 @@
 from Food import Food
 import random
 import numpy as np
+import pygame
+import copy
+
 from NeuralNetwok import NeuralNetwork
+from Config import *
 
 
 class Snake:
 
     directions: np.ndarray = np.array(
         [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)])
-    direction = np.array([1, 0])
-    isAlive = True
 
-    def __init__(self, grid: tuple[int, int], size: int = 3, speed: float = 3) -> None:
-        self.size: int = size
+    def __init__(self, grid: tuple[int, int], size: int = 3, speed: float = 3, render=False) -> None:
         self.body: list[tuple[int, int]] = [(2, grid[0]//2)]
         self.head: np.ndarray = np.array(self.body[0])
-        self.speed: float = speed
+
+        self.size = size
+        self.speed = speed
+        self.render = render
+
         self.grid: tuple[int, int] = grid
         self.food: Food = self.getRandFood()
-        pass
 
-    def move(self, direction: np.ndarray) -> None:
+        self.brain = NeuralNetwork(8*3, (32, 32, 32), 4)
+        self.color = (random.randint(0, 255), random.randint(
+            0, 255), random.randint(0, 255))
+        self.food.color = (self.color[0]*0.8,
+                           self.color[1]*0.8, self.color[2]*0.8)
+
+        self.isAlive = True
+        self.mutationRate = 30
+        self.age = 0
+        self.lifeSpan = 200
+
+    def move(self) -> None:
         # Move the head
-        self.head = self.head + direction
+        self.age += 1
+        self.lifeSpan -= 1
+
+        if self.lifeSpan <= 0:
+            self.isAlive = False
+            return
+
+        vision = self.look()
+        probabilities = self.brain.forward(vision.reshape(1, vision.size))
+
+        index = np.argmax(probabilities)
+        self.head += self.directions[index]
 
         # Check if the snake ate food
         if (self.head == self.food.pos).all():
@@ -42,7 +68,7 @@ class Snake:
             self.isAlive = False
 
         # Move the body
-        self.body.insert(0, self.head)
+        self.body.insert(0, (self.head[0], self.head[1]))
 
     def getRandFood(self) -> Food:
         x = random.randint(0, self.grid[0] - 1)
@@ -89,3 +115,31 @@ class Snake:
             vision[i*3+2] = wall_dist
 
         return vision
+
+    def draw(self, screen) -> None:
+        for segment in self.body:
+            x, y = gridToPixel(segment)
+            x += BODY_GAP/2
+            y += BODY_GAP/2
+
+            width = SEG_SIZE - BODY_GAP
+            height = SEG_SIZE - BODY_GAP
+            rect = (x, y, width, height)
+
+            pygame.draw.rect(screen, self.color, rect)
+
+            self.food.draw(screen)
+
+    def fitness(self) -> float:
+        return self.size + self.age ** 1/2
+
+    def offspring(self) -> 'Snake':
+        child = self.clone()
+        child.brain.mutate(self.mutationRate)
+
+        return child
+
+    def clone(self) -> 'Snake':
+        clone = Snake(self.grid, render=self.render)
+        clone.brain = copy.deepcopy(self.brain)
+        return clone

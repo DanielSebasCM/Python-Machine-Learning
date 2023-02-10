@@ -1,22 +1,6 @@
-from Game import Game
-import pygame
+from World import World
 
-game = Game()
+game = World(n_snakes=100)
 
-running = True
 
-while running:
-
-    for event in game.getEvents():
-
-        if event.type == pygame.QUIT:
-            running = False
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                game.step()
-            else:
-                game.handleInput(event)
-
-    game.renderFrame()
-    game.fpsController.tick(game.FPS)
+game.start()

@@ -8,13 +8,13 @@ class Food:
     color = food_color
 
     def __init__(self, x, y) -> None:
-        self.pos = np.array((x, y))
+        self.pos = (x, y)
         pass
 
     def draw(self, screen) -> None:
         x, y = gridToPixel(self.pos)
-        y += FOOD_GAP/2
-        x += FOOD_GAP/2
+        y += FOOD_GAP//2
+        x += FOOD_GAP//2
 
         width = SEG_SIZE - FOOD_GAP
         height = SEG_SIZE - FOOD_GAP

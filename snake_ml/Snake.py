@@ -10,12 +10,12 @@ from Config import *
 
 class Snake:
 
-    directions: np.ndarray = np.array(
-        [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)])
+    directions: list[tuple[int, int]] = [
+        (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
 
     def __init__(self, grid: tuple[int, int], size: int = 3, speed: float = 3, render=False) -> None:
         self.body: list[tuple[int, int]] = [(2, grid[0]//2)]
-        self.head: np.ndarray = np.array(self.body[0])
+        self.head = self.body[0]
 
         self.size = size
         self.speed = speed
@@ -24,11 +24,12 @@ class Snake:
         self.grid: tuple[int, int] = grid
         self.food: Food = self.getRandFood()
 
-        self.brain = NeuralNetwork(8*3, (32, 32, 32), 4)
+        self.brain = NeuralNetwork(8*3, [32, 32, 32], 4)
         self.color = (random.randint(0, 255), random.randint(
             0, 255), random.randint(0, 255))
-        self.food.color = (self.color[0]*0.8,
-                           self.color[1]*0.8, self.color[2]*0.8)
+        self.food.color = (int(self.color[0]*0.8),
+                           int(self.color[1]*0.8),
+                           int(self.color[2]*0.8))
 
         self.isAlive = True
         self.mutationRate = 30
@@ -48,10 +49,11 @@ class Snake:
         probabilities = self.brain.forward(vision.reshape(1, vision.size))
 
         index = np.argmax(probabilities)
-        self.head += self.directions[index]
+        self.head = (self.head[0] + self.directions[index][0],
+                     self.head[1] + self.directions[index][1])
 
         # Check if the snake ate food
-        if (self.head == self.food.pos).all():
+        if (self.head == self.food.pos):
             self.size += 1
             self.food = self.getRandFood()
 
@@ -78,12 +80,10 @@ class Snake:
 
         return Food(x, y)
 
-    def contains(self, point) -> bool:
-        if type(point) != np.ndarray:
-            point = np.array(point)
+    def contains(self, point: tuple[int, int]) -> bool:
 
         for body_part in self.body:
-            if (body_part == point).all():
+            if (body_part == point):
                 return True
         return False
 
@@ -92,20 +92,20 @@ class Snake:
         vision = np.zeros(8*3)
 
         for i, direction in enumerate(self.directions):
-            pos: np.ndarray = self.head + direction
+            pos = self.head[0] + direction[0], self.head[1] + direction[1]
             distance = 1
             food_dist = 0
             snake_dist = 0
             wall_dist = 0
 
             while (0 <= pos[0] < self.grid[0] and 0 <= pos[1] < self.grid[1]):
-                if not food_dist and (self.food.pos == pos).all():
+                if not food_dist and (self.food.pos == pos):
                     food_dist = distance
 
                 if not snake_dist and self.contains(pos):
                     snake_dist = distance
 
-                pos += direction
+                pos = pos[0] + direction[0], pos[1] + direction[1]
                 distance += 1
 
             wall_dist = distance
@@ -119,8 +119,8 @@ class Snake:
     def draw(self, screen) -> None:
         for segment in self.body:
             x, y = gridToPixel(segment)
-            x += BODY_GAP/2
-            y += BODY_GAP/2
+            x += BODY_GAP//2
+            y += BODY_GAP//2
 
             width = SEG_SIZE - BODY_GAP
             height = SEG_SIZE - BODY_GAP

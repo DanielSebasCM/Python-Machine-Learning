@@ -1,6 +1,6 @@
-import numpy as np
+from Config import *
 from Layer import Layer
-
+import copy
 
 class NeuralNetwork:
 
@@ -24,6 +24,18 @@ class NeuralNetwork:
             output = layer.forward(output)
         return output
 
+    def copy(self) -> "NeuralNetwork":
+        return copy.deepcopy(self)
+
     def mutate(self, rate):
         for layer in self.layers:
             layer.mutate(rate)
+
+    def crossover(self, partner: "NeuralNetwork") -> "NeuralNetwork":
+        child = NeuralNetwork(
+            self.inputNodes, self.hiddenNodes, self.outputNodes)
+
+        for i in range(len(self.layers)):
+            child.layers[i] = self.layers[i].crossover(partner.layers[i])
+
+        return child

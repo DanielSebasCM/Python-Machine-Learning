@@ -1,11 +1,10 @@
+from Config import *
+
 from Food import Food
 import random
-import numpy as np
 import pygame
-import copy
 
 from NeuralNetwok import NeuralNetwork
-from Config import *
 
 
 class Snake:
@@ -13,18 +12,18 @@ class Snake:
     directions: list[tuple[int, int]] = [
         (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
 
-    def __init__(self, grid: tuple[int, int], size: int = 3, speed: float = 3, render=False) -> None:
-        self.body: list[tuple[int, int]] = [(2, grid[0]//2)]
+    size = 4
+    score = 0
+
+    def __init__(self, createBrain=True) -> None:
+        self.body: list[tuple[int, int]] = [(2, GRID_WIDTH//2)]
         self.head = self.body[0]
 
-        self.size = size
-        self.speed = speed
-        self.render = render
-
-        self.grid: tuple[int, int] = grid
         self.food: Food = self.getRandFood()
 
-        self.brain = NeuralNetwork(8*3, [32, 32, 32], 4)
+        if createBrain:
+            self.brain = NeuralNetwork(8*3, [32, 32, 32], 4)
+
         self.color = (random.randint(0, 255), random.randint(
             0, 255), random.randint(0, 255))
         self.food.color = (int(self.color[0]*0.8),
@@ -32,7 +31,6 @@ class Snake:
                            int(self.color[2]*0.8))
 
         self.isAlive = True
-        self.mutationRate = 30
         self.age = 0
         self.lifeSpan = 200
 
@@ -56,13 +54,15 @@ class Snake:
         if (self.head == self.food.pos):
             self.size += 1
             self.food = self.getRandFood()
+            self.lifeSpan += 100
+            self.score += 1
 
         # Check if the snake is too long
         if (len(self.body) > self.size - 1):
             self.body.pop()
 
         # Check if the snake went out of bounds
-        if not (0 <= self.head[0] < self.grid[0] and 0 <= self.head[1] < self.grid[1]):
+        if not (0 <= self.head[0] < GRID_WIDTH and 0 <= self.head[1] < GRID_HEIGHT):
             self.isAlive = False
 
         # Check if the snake ate itself
@@ -73,8 +73,8 @@ class Snake:
         self.body.insert(0, (self.head[0], self.head[1]))
 
     def getRandFood(self) -> Food:
-        x = random.randint(0, self.grid[0] - 1)
-        y = random.randint(0, self.grid[1] - 1)
+        x = random.randint(0, GRID_WIDTH - 1)
+        y = random.randint(0, GRID_HEIGHT - 1)
         if self.contains((x, y)):
             return self.getRandFood()
 
@@ -87,7 +87,7 @@ class Snake:
                 return True
         return False
 
-    def look(self) -> np.ndarray:
+    def look(self) -> ndarray:
 
         vision = np.zeros(8*3)
 
@@ -98,7 +98,7 @@ class Snake:
             snake_dist = 0
             wall_dist = 0
 
-            while (0 <= pos[0] < self.grid[0] and 0 <= pos[1] < self.grid[1]):
+            while (0 <= pos[0] < GRID_WIDTH and 0 <= pos[1] < GRID_HEIGHT):
                 if not food_dist and (self.food.pos == pos):
                     food_dist = distance
 
@@ -110,9 +110,9 @@ class Snake:
 
             wall_dist = distance
 
-            vision[i*3] = food_dist
-            vision[i*3+1] = snake_dist
-            vision[i*3+2] = wall_dist
+            vision[i] = food_dist
+            vision[i+8] = snake_dist
+            vision[i+16] = wall_dist
 
         return vision
 
@@ -130,16 +130,24 @@ class Snake:
 
             self.food.draw(screen)
 
-    def fitness(self) -> float:
-        return self.size + self.age ** 1/2
+    def getFitness(self) -> float:
+        fitness = self.age**2
+        if self.score < 10:
+            fitness *= 2**self.score
+        else:
+            fitness *= 2**10 * self.score
 
-    def offspring(self) -> 'Snake':
-        child = self.clone()
-        child.brain.mutate(self.mutationRate)
+        return fitness
 
+    def copy(self) -> "Snake":
+        snake = Snake()
+        snake.brain = self.brain.copy()
+        return snake
+
+    def mutate(self, mutationRate: float) -> None:
+        self.brain.mutate(mutationRate)
+
+    def crossover(self, partner: "Snake") -> "Snake":
+        child = Snake(createBrain=False)
+        child.brain = self.brain.crossover(partner.brain)
         return child
-
-    def clone(self) -> 'Snake':
-        clone = Snake(self.grid, render=self.render)
-        clone.brain = copy.deepcopy(self.brain)
-        return clone

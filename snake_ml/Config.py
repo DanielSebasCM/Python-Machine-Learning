@@ -1,20 +1,25 @@
+import numpy
+np = numpy
+ndarray = np.ndarray
+
 ASPECT_RATIO = 16/9
 
 HEIGHT = 480
-WIDTH = HEIGHT * ASPECT_RATIO
+WIDTH = int(HEIGHT * ASPECT_RATIO)
 
 GRID_HEIGHT = 15
 GRID_WIDTH = 15
 
 SEG_SIZE = int(min(HEIGHT/GRID_HEIGHT, WIDTH/GRID_WIDTH))
-LEFT_MARGIN = (WIDTH - GRID_WIDTH*SEG_SIZE)/2
-TOP_MARGIN = (HEIGHT - GRID_HEIGHT*SEG_SIZE)/2
+LEFT_MARGIN = (WIDTH - GRID_WIDTH*SEG_SIZE)//2
+TOP_MARGIN = (HEIGHT - GRID_HEIGHT*SEG_SIZE)//2
 
 BODY_GAP = int(SEG_SIZE*0.03)
 FOOD_GAP = int(SEG_SIZE*0.2)
 
-SPEED = 100  # Grid squares per second
-FPS = 602
+SPEED = 5  # Grid squares per second
+FPS = 100
+
 
 # snake_color = 0x788374
 # food_color = 0xaa644d
@@ -27,7 +32,6 @@ food_color: tuple[int, int, int] = (170, 100, 77)
 text_color: tuple[int, int, int] = (245, 233, 191)
 text_bg_color: tuple[int, int, int] = (55, 42, 57)
 background_color: tuple[int, int, int] = (245, 233, 191)
-
 
 
 def gridToPixel(grid_pos) -> tuple[int, int]:

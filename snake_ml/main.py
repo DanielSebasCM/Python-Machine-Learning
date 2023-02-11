@@ -1,6 +1,5 @@
 from World import World
 
-game = World(n_snakes=100)
+world = World(500)
 
-
-game.start()
+world.run()

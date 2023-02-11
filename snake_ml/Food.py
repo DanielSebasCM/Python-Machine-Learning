@@ -11,7 +11,7 @@ class Food:
         self.pos = (x, y)
         pass
 
-    def draw(self, screen) -> None:
+    def draw(self, screen: pygame.Surface) -> None:
         x, y = gridToPixel(self.pos)
         y += FOOD_GAP//2
         x += FOOD_GAP//2

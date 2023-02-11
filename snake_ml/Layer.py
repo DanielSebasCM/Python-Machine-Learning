@@ -3,7 +3,7 @@ import copy
 
 
 class Layer:
-    def __init__(self, inputNodes: int, outputNodes: int, activation='relu', scale: float = 1) -> None:
+    def __init__(self, inputNodes: int, outputNodes: int, activation='sigmoid', scale: float = 1) -> None:
         self.scale = scale
         shape = (inputNodes, outputNodes)
         self.weights = np.random.normal(0, self.scale * 0.3, shape)
@@ -12,13 +12,12 @@ class Layer:
             self.activation = self.relu
         elif activation == 'softmax':
             self.activation = self.softmax
+        elif activation == 'sigmoid':
+            self.activation = self.sigmoid
         else:
             raise Exception("Activation function not found")
 
         self.z = None
-
-    def relu(self, z):
-        return np.maximum(0, z)
 
     def forward(self, input):
         self.z = np.dot(input, self.weights) + self.bias
@@ -37,7 +36,7 @@ class Layer:
 
         mask = np.random.random(self.bias.shape) < rate
         self.bias[mask] += np.random.normal(0,
-                                            0.2, self.bias.shape)[mask] * self.scale
+                                            0.1, self.bias.shape)[mask] * self.scale
 
         self.bias[self.bias > 1] = 1
         self.bias[self.bias < -1] = -1
@@ -75,7 +74,13 @@ class Layer:
             start, end = end, start
         return start, end
 
+    def relu(self, z):
+        return np.maximum(0, z)
+
     def softmax(self, z):
         exp_values = np.exp(z - np.max(z, axis=1, keepdims=True))
         probapillities = exp_values/np.sum(exp_values, axis=1, keepdims=True)
         return probapillities
+
+    def sigmoid(self, z):
+        return 1/(1+np.exp(-z))
